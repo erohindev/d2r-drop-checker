@@ -1,0 +1,1 @@
+# d2r-drop-checker
