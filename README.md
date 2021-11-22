@@ -1,3 +1,12 @@
-# d2r-drop-checker
+# D2R Drop Checker
 
-<blockquote class="imgur-embed-pub" lang="en" data-id="a/7CFF54z" data-context="false" ><a href="//imgur.com/a/7CFF54z"></a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+Customizable drop notifier
+
+<img src='./2.gif'>
+
+# How to use
+
+1. Unpack zip
+2. Edit config `filters/filters.txt`
+3. Run game
+4. Run `DC.exe`
