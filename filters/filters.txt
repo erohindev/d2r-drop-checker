@@ -1,11 +1,22 @@
 #- comment symbol. Write comments only on separate lines
 
 CONFIG:
+# depends on mode. Don't use negative offsets
+TextX = 8
+TextY = 20
+
+# note text alignment to right is not implemented, make bigger offset from right screen border (e.g. TextX = 400) to see text
+# Mode 0 - (TextX = 0 TextY = 0) is top left screen corner, print items from top to bottom
+# Mode 1 - (TextX = 0 TextY = 0) is top right screen corner, print items from top to bottom
+# Mode 2 - (TextX = 0 TextY = 0) is bottom right screen corner, print items displayed from bottom to top
+# Mode 3 - (TextX = 0 TextY = 0) is bottom left screen corner, print items displayed from bottom to top
+AlignMode = 3
+
 # font size
 TextFontSize = 20
 
 # step between text lines in pixels
-TextLineStep = 24
+TextLineStep = 22
 
 # check items every n milliseconds (20-2000)
 CheckDelayMs = 250
@@ -49,6 +60,9 @@ Diadem
 
 # FRP
 Full Rejuv
+
+# Keys
+Key Of
 
 # filter whitelist logic:
 # [x][y] - item with x OR y-rarity. Possible values [M]-magic, [R]-rare, [S]-set, [U]-unique, [HQ]-superior, [ETH]-etheral

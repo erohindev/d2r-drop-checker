@@ -15,7 +15,7 @@ public class ItemChecker : IDisposable
     public event Action<GameData, long> OnGameData;
 
     private GameData _gameData;
-    private Settings _settings;
+    private FilterSettings _filterSettings;
     
     private readonly List<ItemD2> _filteredItems = new List<ItemD2>();
     private readonly Dictionary<uint, int> _blinkUID = new  Dictionary<uint, int>();
@@ -74,8 +74,11 @@ public class ItemChecker : IDisposable
 
     public async void Run()
     {
-        _settings = new Settings();
-        
+        _filterSettings = new FilterSettings();
+
+        if (_filterSettings.UseCustomNamesById)
+            ItemD2.ItemIDs = _filterSettings.ItemsNamesByID;
+
         SetStatusText(D2ItemRarity.RARE, WaitingD2R); Console.WriteLine(WaitingD2R);
         
         await GameManager.WaitForGame();
@@ -90,7 +93,7 @@ public class ItemChecker : IDisposable
         {
             await Task.Run(TryGetGameData);
 
-            await Task.Delay(_settings.CheckDelayMs);
+            await Task.Delay(_filterSettings.CheckDelayMs);
         }
         
         Console.WriteLine("Close terminal or press [Esc] to quit");
@@ -98,7 +101,7 @@ public class ItemChecker : IDisposable
 
     void ApplyFilters(GameData gameData)
     {
-        if(gameData?.ItemUnits == null || _settings?.Filters == null) return;
+        if(gameData?.ItemUnits == null || _filterSettings?.Filters == null) return;
             
         _filteredItems.Clear();
             
@@ -106,7 +109,7 @@ public class ItemChecker : IDisposable
 
         foreach (var itemUnit in gameData.ItemUnits)
         {
-            foreach (var filter in _settings.Filters)
+            foreach (var filter in _filterSettings.Filters)
             {
                 var itemUnitData = itemUnit.ItemD2.ItemUnitData;
                     
@@ -145,7 +148,11 @@ public class ItemChecker : IDisposable
             VSync = true
         };
 
+        // seems StickyWindow size always adopt window size
         _overlayWindow = new StickyWindow(GameManager.MainWindowHandle, graphics);
+
+        // Window area is bigger than ClientArea in windowed mode, with titlebar and big borders
+        _overlayWindow.AttachToClientArea = true;
         _overlayWindow.IsTopmost = true;
         
         _overlayWindow.DestroyGraphics += OverlayWindowOnDestroyGraphics;
@@ -203,9 +210,17 @@ public class ItemChecker : IDisposable
 
         if (e.RecreateResources) return;
 
-        _fonts["default"] = IsFontInstalled("exocetblizzardot-medium.otf") ?
-            gfx.CreateFont("Exocet Blizzard Mixed Caps", _settings?.TextFontSize ?? 24) :
-            gfx.CreateFont("Consolas", _settings?.TextFontSize ?? 24);
+        bool isFontInstalled = IsFontInstalled("exocetblizzardot-medium.otf");
+
+        if (!isFontInstalled)
+        {
+            Console.WriteLine("Install 'exocetblizzardot-medium.otf' FOR ALL USERS");
+            Console.WriteLine("for better experience! :)");
+        }
+
+        _fonts["default"] = isFontInstalled ?
+            gfx.CreateFont("Exocet Blizzard Mixed Caps", _filterSettings?.TextFontSize ?? 24) :
+            gfx.CreateFont("Consolas", _filterSettings?.TextFontSize ?? 24);
         
         _fonts["status"] = gfx.CreateFont("Consolas", 12);
 
@@ -233,21 +248,67 @@ public class ItemChecker : IDisposable
         _statusText = $"[T:{_readTime + _filterTime}ms{items}] " + text;
     }
 
+    struct ScreenPoint
+    {
+        public int X;
+        public int Y;
+
+        public ScreenPoint(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public override string ToString()
+        {
+            return "[x:" + X + ", y:" + Y + "]";
+        }
+    }
+
+    ScreenPoint GetScreenPointByMode(FilterSettings.AlignMode alignMode, int offsetX = 0, int offsetY = 0)
+    {
+        int x = alignMode switch
+        {
+            FilterSettings.AlignMode.TOP_LEFT => _filterSettings.TextX + offsetX,
+            FilterSettings.AlignMode.TOP_RIGHT => _overlayWindow.Width - _filterSettings.TextX + offsetX,
+            FilterSettings.AlignMode.BOTTOM_RIGHT => _overlayWindow.Width - _filterSettings.TextX + offsetX,
+            FilterSettings.AlignMode.BOTTOM_LEFT => _filterSettings.TextX + offsetX,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        int y = alignMode switch
+        {
+            FilterSettings.AlignMode.TOP_LEFT => _filterSettings.TextY + offsetY,
+            FilterSettings.AlignMode.TOP_RIGHT => _filterSettings.TextY + offsetY,
+            FilterSettings.AlignMode.BOTTOM_RIGHT => _overlayWindow.Height - _filterSettings.TextY + offsetY,
+            FilterSettings.AlignMode.BOTTOM_LEFT => _overlayWindow.Height - _filterSettings.TextY + offsetY,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        return new ScreenPoint(x, y);
+    }
+
     void PrintStatus(Graphics graphics)
     {
         if(string.IsNullOrWhiteSpace(_statusText)) return;
+
+        var point = GetScreenPointByMode(_filterSettings.Mode);
         
         graphics.DrawText(
             _fonts["status"],
             _statusBrush ?? _brushes[D2ItemRarity.NORMAL],
-            16, _overlayWindow.Height - 28,
+            point.X, point.Y,
             _statusText);
     }
 
     void PrintDroppedItems(Graphics graphics)
     {
-        if(_gameData == null || _filteredItems == null || _settings == null) return;
-
+        if(_gameData == null || _filteredItems == null || _filterSettings == null) return;
+        
+        int sign =
+            _filterSettings.Mode == FilterSettings.AlignMode.TOP_LEFT ||
+            _filterSettings.Mode == FilterSettings.AlignMode.TOP_RIGHT ? 1 : -1;
+        
         for (int i = 0; i < _filteredItems.Count; i++)
         {
             var item = _filteredItems[i];
@@ -255,11 +316,15 @@ public class ItemChecker : IDisposable
             var itemUnitData = item.ItemUnitData;
 
             var rarity = itemUnitData.Rarity;
+
+            bool nonmagic = rarity == D2ItemRarity.NORMAL ||
+                            rarity == D2ItemRarity.LOW_QUALITY ||
+                            rarity == D2ItemRarity.HIGH_QUALITY;
             
             if (item.IsRune)
-                rarity = D2ItemRarity.CRAFTED;
-            else if (itemUnitData.Etheral || itemUnitData.Socketed)
-                rarity = D2ItemRarity.LOW_QUALITY;
+                rarity = D2ItemRarity.CRAFTED; // for color
+            else if (nonmagic && (itemUnitData.Etheral || itemUnitData.Socketed))
+                rarity = D2ItemRarity.LOW_QUALITY; // for color
 
             string nameToDisplay = item.Name;
 
@@ -275,27 +340,26 @@ public class ItemChecker : IDisposable
             if (!itemUnitData.New && !item.IsSimple && item.ItemUnitData.IsIdentified)
                 nameToDisplay = "(checked) " + nameToDisplay;
 
-            int tx = 16;
-            int ty = _overlayWindow.Height - 54 - (i * _settings?.TextLineStep ?? 24);
-            
+            var point = GetScreenPointByMode(_filterSettings.Mode, 0, (i + 1) * _filterSettings.TextLineStep * sign);
+
             // shadow
             graphics.DrawText(
                 _fonts["default"],
                 _brushes[D2ItemRarity.NONE],
-                tx + 1, ty + 1,
+                point.X + 1, point.Y + 1,
                 nameToDisplay);
 
             var brush = _brushes[rarity];
 
             bool blink = false; // no draw text if true
 
-            if (_settings.NewItemsBlink)
+            if (_filterSettings.NewItemsBlink)
             {
                 if (itemUnitData.New)
                 {
                     if (!_blinkUID.ContainsKey(item.Unit.UID))
                     {
-                        _blinkUID[item.Unit.UID] = _settings.BlinkDuration;
+                        _blinkUID[item.Unit.UID] = _filterSettings.BlinkDuration;
                     }
                     else
                     {
@@ -304,7 +368,7 @@ public class ItemChecker : IDisposable
                             _blinkUID[item.Unit.UID]--;
 
                             // 400 IQ
-                            blink = (int)(_blinkUID[item.Unit.UID] / _settings.BlinkSpeed) % 2 == 0;
+                            blink = (int)(_blinkUID[item.Unit.UID] / _filterSettings.BlinkSpeed) % 2 == 0;
                         }
                     }
                 }
@@ -320,7 +384,7 @@ public class ItemChecker : IDisposable
                 graphics.DrawText(
                     _fonts["default"], 
                     brush,
-                    tx, ty,
+                    point.X, point.Y,
                     nameToDisplay);
             }
         }

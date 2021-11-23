@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
 namespace D2Tools.Helpers
@@ -85,6 +86,27 @@ namespace D2Tools.Helpers
         [DllImport("user32.dll")]
         static extern bool GetClientRect(IntPtr hWnd, ref Rect lpRect);
         
+        public static Rectangle GetWindowRectWithoutBorders(IntPtr handle, out Point topLeftCorner)
+        {
+            var windowRect = new Rect();
+            GetWindowRect(handle, ref windowRect);
+
+            var clientRect = new Rect();
+            GetClientRect(handle, ref clientRect);
+
+            int borderSize = ((windowRect.Right - windowRect.Left) - (clientRect.Right - clientRect.Left)) / 2;
+            int titleBarSize = ((windowRect.Bottom - windowRect.Top) - (clientRect.Bottom - clientRect.Top)) - borderSize;
+
+            topLeftCorner = new Point(windowRect.Left + borderSize, windowRect.Top + titleBarSize);
+            
+            var bounds = new Rectangle(topLeftCorner.X, topLeftCorner.Y, windowRect.Right - windowRect.Left - borderSize * 2, windowRect.Bottom - windowRect.Top - titleBarSize - borderSize);
+        
+            if(bounds.Width <= 0 || bounds.Height <= 0)
+                return new Rectangle(0,0,0,0);
+
+            return bounds;
+        }
+
         public static readonly uint WINEVENT_OUTOFCONTEXT = 0;
         public static readonly uint EVENT_SYSTEM_FOREGROUND = 3;
         

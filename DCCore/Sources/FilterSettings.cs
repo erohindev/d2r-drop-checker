@@ -6,12 +6,17 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using D2Tools.Structs;
 
-public class Settings
+public class FilterSettings
 {
     public enum ParsingMode
     {
         CONFIG,
         FILTERS
+    }
+    
+    public enum AlignMode
+    {
+        TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT
     }
 
     public class FilterEntry
@@ -27,26 +32,95 @@ public class Settings
         public int MaxSockets;
     }
 
+    public bool UseCustomNamesById = false;
+
+    public Dictionary<uint, string> ItemsNamesByID = new Dictionary<uint, string>();
     public List<FilterEntry> Filters = new List<FilterEntry>();
 
-    public int TextX = 80;
-    public int TextY = 80;
+    public AlignMode Mode = AlignMode.BOTTOM_RIGHT;
+    
+    public int TextX = 8;
+    public int TextY = 20;
 
     public int CheckDelayMs = 500;
 
-    public int TextFontSize = 24;
+    public int TextFontSize = 20;
     public int TextLineStep = 24;
 
     public bool NewItemsBlink = true;
-    public float BlinkSpeed = 10f;
-    public int BlinkDuration = 60;
+    public float BlinkSpeed = 5;
+    public int BlinkDuration = 50;
 
-    public Settings()
+    public FilterSettings()
     {
+        Console.WriteLine("--------------------");
+
+        ParseIDs();
+        Console.WriteLine(ItemsNamesByID.Count + " IDs");
+
+        Console.WriteLine("--------------------");
+
         ParseConfig();
 
         Console.WriteLine(Filters.Count + " filters enabled");
         Console.WriteLine("--------------------");
+    }
+
+    void ParseIDs()
+    {
+        string namesByIDsConfig = "filters/ID_NAME.txt";
+
+        if (!File.Exists(namesByIDsConfig))
+        {
+            Console.WriteLine($"'{namesByIDsConfig}' not found, vanilla names will be displayed and filtered");
+        }
+        else
+        {
+            Console.WriteLine($"Loading '{namesByIDsConfig}'...");
+
+            string[] idNamesLines = File.ReadAllLines(namesByIDsConfig);
+
+            foreach (var idName in idNamesLines)
+            {
+                if (string.IsNullOrWhiteSpace(idName) || idName.StartsWith("#")) continue;
+
+                if (idName.StartsWith(">"))
+                {
+                    Console.WriteLine(idName.Substring(1));
+                    continue;
+                }
+
+                if (!idName.Contains(":"))
+                {
+                    Console.WriteLine($"line [{Array.IndexOf(idNamesLines, idName)}] '{idName}' will be ignored");
+                    continue;
+                }
+
+                string idNameToSplit = idName.Trim('\n', '\r', '\t', ' ');
+
+                string[] splitted = idNameToSplit.Split(':', 2);
+
+                bool idOk = int.TryParse(splitted[0], out int id);
+
+                if (!idOk)
+                {
+                    Console.WriteLine(
+                        $"line [{Array.IndexOf(idNamesLines, idName)}] '{idName}' - can't parse ID '{splitted[0]}'");
+                    continue;
+                }
+
+                if (ItemsNamesByID.ContainsKey((uint)id))
+                {
+                    Console.WriteLine(
+                        $"line [{Array.IndexOf(idNamesLines, idName)}] '{idName}' - duplicate ID '{splitted[0]}'");
+                    continue;
+                }
+
+                ItemsNamesByID[(uint)id] = splitted[1];
+            }
+        }
+
+        UseCustomNamesById = ItemsNamesByID.Count > 0;
     }
 
     void ParseConfig(List<string> lines = null)
@@ -115,41 +189,53 @@ public class Settings
 
                     string parameter = paramValue[0].Trim(' ');
 
-                    // TODO handle exceptions
                     switch (parameter)
                     {
+                        case "AlignMode":
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value1)) Mode = (AlignMode)value1;
+                            else Console.WriteLine($"Can't parse '{line}'");
+                            break;
+                        
                         case "TextX":
-                            TextX = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value2)) TextX = value2;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "TextY":
-                            TextY = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value3)) TextY = value3;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "TextFontSize":
-                            TextFontSize = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value4)) TextFontSize = value4;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "TextLineStep":
-                            TextLineStep = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value5)) TextLineStep = value5;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "CheckDelayMs":
-                            CheckDelayMs = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
-
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value6)) CheckDelayMs = value6;
+                            else Console.WriteLine($"Can't parse '{line}'");
+                            
                             CheckDelayMs = Math.Clamp(CheckDelayMs, 20, 2000);
                             break;
 
                         case "NewItemsBlink":
-                            NewItemsBlink = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer) > 0;
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value7)) NewItemsBlink = value7 > 0;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "BlinkSpeed":
-                            BlinkSpeed = float.Parse(paramValue[1].Trim(' '), NumberStyles.Float);
+                            if (float.TryParse(paramValue[1].Trim(' '), out float value8)) BlinkSpeed = value8;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         case "BlinkDuration":
-                            BlinkDuration = int.Parse(paramValue[1].Trim(' '), NumberStyles.Integer);
+                            if (int.TryParse(paramValue[1].Trim(' '), out int value9)) BlinkDuration = value9;
+                            else Console.WriteLine($"Can't parse '{line}'");
                             break;
 
                         default:
@@ -272,4 +358,4 @@ public class Settings
         if (parseAgain)
             ParseConfig(lines);
     }
-    }
+}

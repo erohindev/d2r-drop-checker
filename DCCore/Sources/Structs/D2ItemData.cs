@@ -528,6 +528,7 @@ namespace D2Tools.Structs
             { D2ItemRarity.NONE, new Color(0, 0, 0) },
         };
 
+        // vanilla
         public static Dictionary<uint, string> ItemIDs = new Dictionary<uint, string>()
         {
             { 0, "Hand Axe" },

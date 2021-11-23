@@ -7,8 +7,7 @@ namespace DropChecker
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("D2R DropChecker v0.1");
-            Console.WriteLine("--------------------");
+            Console.WriteLine("D2R DropChecker v0.1.2");
             
             using var itemChecker = new ItemChecker();
             
