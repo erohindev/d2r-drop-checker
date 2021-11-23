@@ -11,3 +11,5 @@ Customizable drop notifier
 5. Run `DC.exe`
 
 <img src='./2.gif'>
+
+Based on https://github.com/OneXDeveloper/MapAssist
