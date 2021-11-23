@@ -1,0 +1,62 @@
+#- comment symbol. Write comments only on separate lines
+
+CONFIG:
+# font size
+TextFontSize = 20
+
+# step between text lines in pixels
+TextLineStep = 24
+
+# check items every n milliseconds (20-2000)
+CheckDelayMs = 250
+
+# blink new dropped item labels, 0 - turn off blinks
+NewItemsBlink = 1
+
+# lower is faster
+BlinkSpeed = 5
+
+# in frames
+BlinkDuration = 50
+
+FILTERS:
+# content from (Runes).txt
+# any txt file "(AnyName).txt" can be imported
+(Runes)
+
+# all uniques
+[U]
+
+# all set items
+[S]
+
+# rare jewelry
+[R] Amulet
+[R] Ring
+[R] Jewel
+
+# any socketed armor/weapon with 3-6 sockets
+{3-6}
+
+# any charms
+Charm
+
+# coronets
+Circlet
+Coronet
+Tiara
+Diadem
+
+# FRP
+Full Rejuv
+
+# filter whitelist logic:
+# [x][y] - item with x OR y-rarity. Possible values [M]-magic, [R]-rare, [S]-set, [U]-unique, [HQ]-superior, [ETH]-etheral
+# {2} - any item with 2 sockets
+# {0} - any item without sockets (use with caution and only for normal items)
+# {4-6} - any item with 4, 5 or 6 sockets
+# [x]{4-6} - any item with 4, 5 or 6 sockets AND x-rarity
+# [x] Name - item with x-rarity AND if item name contains 'Name' text (case-sensetive)
+# {3} Name - item with 3 sockets AND if item name contains 'Name' text
+# Name - check only if item name contains 'Name' text, any number of sockets, any rarity. Filter 'Rune' will display all runes, Rune Swords, Rune Bows...
+# items names list: http://www.gmstemple.com/Diablo2/itemcodes.html (please check for typos before copy-past)
