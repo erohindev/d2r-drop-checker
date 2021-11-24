@@ -5,9 +5,11 @@ namespace DropChecker
 {
     internal class Program
     {
+        public static event Action<ConsoleKeyInfo> OnKeyPressed;
+
         public static void Main(string[] args)
         {
-            Console.WriteLine("D2R DropChecker v0.1.2");
+            Console.WriteLine("D2R DropChecker v0.2");
             
             using var itemChecker = new ItemChecker();
             
@@ -20,6 +22,9 @@ namespace DropChecker
             do
             {
                 key = Console.ReadKey(false);
+                
+                OnKeyPressed?.Invoke(key);
+                
             } while (key.Key != ConsoleKey.Escape);
 
             GameManager.Run = false;

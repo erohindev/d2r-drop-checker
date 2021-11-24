@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using D2Tools.Helpers;
 using D2Tools.Structs;
 using D2Tools.Types;
+using DropChecker;
 using GameOverlay.Drawing;
 using GameOverlay.Windows;
 using Point = D2Tools.Types.Point;
@@ -16,6 +17,8 @@ public class ItemChecker : IDisposable
 
     private GameData _gameData;
     private FilterSettings _filterSettings;
+
+    private bool reloadFilters = false;
     
     private readonly List<ItemD2> _filteredItems = new List<ItemD2>();
     private readonly Dictionary<uint, int> _blinkUID = new  Dictionary<uint, int>();
@@ -62,6 +65,20 @@ public class ItemChecker : IDisposable
             
             ApplyFilters(gameData);
         };
+
+        Program.OnKeyPressed += key =>
+        {
+            if (key.Key == ConsoleKey.R)
+            {
+                Console.WriteLine("eload filters command");
+                reloadFilters = true;
+            }
+            else if (key.Key == ConsoleKey.E)
+            {
+                Console.WriteLine("dit filters command");
+                Process.Start("notepad.exe", FilterSettings.FiltersFileRelativePath);
+            }
+        };
     }
     
     ~ItemChecker()
@@ -84,6 +101,8 @@ public class ItemChecker : IDisposable
         await GameManager.WaitForGame();
         
         SetStatusText(D2ItemRarity.SET, FoundD2R); Console.WriteLine(FoundD2R);
+        Console.WriteLine("Click on terminal and press E to edit filters.txt");
+        Console.WriteLine("Click on terminal and press R to reload filters.txt");
         
         Console.WriteLine("Running...");
 
@@ -99,8 +118,44 @@ public class ItemChecker : IDisposable
         Console.WriteLine("Close terminal or press [Esc] to quit");
     }
 
+    bool IsItemMatchFilter(D2UnitAnyType item, FilterSettings.FilterEntry filter)
+    {
+        var itemUnitData = item.ItemD2.ItemUnitData;
+                    
+        if(filter.Rarity.Count > 0 && !filter.Rarity.Contains(itemUnitData.Rarity)) return false;
+                    
+        if(filter.CheckEtheral && !itemUnitData.Etheral) return false;
+
+        if (filter.CheckSockets)
+        {
+            if(filter.MinSockets > 0 && !itemUnitData.Socketed) return false;
+            if(filter.MaxSockets == 0 && itemUnitData.Socketed) return false;
+
+            bool socketStatExists =
+                item.ItemD2.TryGetStat(D2Stat.STAT_ITEM_NUMSOCKETS, out int sockets);
+                        
+            if(!socketStatExists) return false;
+                        
+            if(sockets < filter.MinSockets || sockets > filter.MaxSockets) return false;
+        }
+                    
+        if(!string.IsNullOrWhiteSpace(filter.Text) && !item.ItemD2.Name.Contains(filter.Text)) return false;
+
+        return true;
+    }
+
     void ApplyFilters(GameData gameData)
     {
+        if (reloadFilters)
+        {
+            reloadFilters = false;
+            
+            _filterSettings = new FilterSettings();
+
+            if (_filterSettings.UseCustomNamesById)
+                ItemD2.ItemIDs = _filterSettings.ItemsNamesByID;
+        }
+        
         if(gameData?.ItemUnits == null || _filterSettings?.Filters == null) return;
             
         _filteredItems.Clear();
@@ -111,28 +166,26 @@ public class ItemChecker : IDisposable
         {
             foreach (var filter in _filterSettings.Filters)
             {
-                var itemUnitData = itemUnit.ItemD2.ItemUnitData;
-                    
-                if(filter.Rarity.Count > 0 && !filter.Rarity.Contains(itemUnitData.Rarity)) continue;
-                    
-                if(filter.CheckEtheral && !itemUnitData.Etheral) continue;
-
-                if (filter.CheckSockets)
+                if(filter.IgnoreMode) continue;
+                
+                if(!IsItemMatchFilter(itemUnit, filter)) continue;
+                 
+                bool approved = true;
+                
+                // check item again for ignore filter match
+                foreach (var ignoreFilter in _filterSettings.Filters)
                 {
-                    if(filter.MinSockets > 0 && !itemUnitData.Socketed) continue;
-                    if(filter.MaxSockets == 0 && itemUnitData.Socketed) continue;
+                    if(!ignoreFilter.IgnoreMode) continue;
 
-                    bool socketStatExists =
-                        itemUnit.ItemD2.TryGetStat(D2Stat.STAT_ITEM_NUMSOCKETS, out int sockets);
-                        
-                    if(!socketStatExists) continue;
-                        
-                    if(sockets < filter.MinSockets || sockets > filter.MaxSockets) continue;
+                    if (!IsItemMatchFilter(itemUnit, ignoreFilter)) continue;
+                    
+                    approved = false;
+                    break;
                 }
-                    
-                if(!string.IsNullOrWhiteSpace(filter.Text) && !itemUnit.ItemD2.Name.Contains(filter.Text)) continue;
-                    
-                _filteredItems.Add(itemUnit.ItemD2);
+                
+                if(approved)
+                    _filteredItems.Add(itemUnit.ItemD2);
+                
                 break;
             }
         }

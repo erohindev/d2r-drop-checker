@@ -21,6 +21,8 @@ public class FilterSettings
 
     public class FilterEntry
     {
+        public bool IgnoreMode;
+        
         public string Text;
 
         public List<D2ItemRarity> Rarity = new List<D2ItemRarity>();
@@ -122,26 +124,24 @@ public class FilterSettings
 
         UseCustomNamesById = ItemsNamesByID.Count > 0;
     }
+    
+    public static string FiltersFileRelativePath = "filters/filters.txt";
 
     void ParseConfig(List<string> lines = null)
     {
         Filters.Clear();
 
-        string configFile = "filters/filters.txt";
-
         if (lines == null)
         {
-            if (!File.Exists(configFile))
+            if (!File.Exists(FiltersFileRelativePath))
             {
-                Console.WriteLine($"'{configFile}' not found!");
+                Console.WriteLine($"'{FiltersFileRelativePath}' not found!");
                 return;
             }
-            else
-            {
-                Console.WriteLine($"Loading '{configFile}'...");
-            }
 
-            lines = File.ReadAllLines(configFile).ToList();
+            Console.WriteLine($"Loading '{FiltersFileRelativePath}'...");
+
+            lines = File.ReadAllLines(FiltersFileRelativePath).ToList();
         }
 
         var currentParsingMode = ParsingMode.CONFIG;
@@ -172,6 +172,7 @@ public class FilterSettings
 
             switch (currentParsingMode)
             {
+                // CONFIG: section
                 case ParsingMode.CONFIG:
                     if (!line.Contains("="))
                     {
@@ -245,6 +246,7 @@ public class FilterSettings
 
                     break;
 
+                // FILTERS: section
                 case ParsingMode.FILTERS:
 
                     FilterEntry filterEntry = new FilterEntry();
@@ -270,6 +272,18 @@ public class FilterSettings
 
                     if (!parseAgain)
                     {
+                        if (line.StartsWith("!"))
+                        {
+                            filterEntry.IgnoreMode = true;
+                            line = line.Substring(1);
+                        }
+                        
+                        if (line.Contains("[N]"))
+                        {
+                            filterEntry.Rarity.Add(D2ItemRarity.NORMAL);
+                            line = line.Replace("[N]", "");
+                        }
+                        
                         if (line.Contains("[M]"))
                         {
                             filterEntry.Rarity.Add(D2ItemRarity.MAGIC);
