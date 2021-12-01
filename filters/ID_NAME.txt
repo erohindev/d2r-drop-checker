@@ -74,13 +74,13 @@
 70:Long Bow
 71:Composite Bow
 72:Short Battle Bow
-73:Long Battle ow
+73:Long Battle Bow
 74:Short War Bow
 75:Long War Bow
-76:Light CrossBow
+76:Light Crossbow
 77:CrossBow
-78:Heavy CrossBow
-79:Repeating CrossBow
+78:Heavy Crossbow
+79:Repeating Crossbow
 80:Rancid Gas Potion
 81:Oil Potion
 82:Choking Gas Potion
@@ -276,7 +276,7 @@
 272:Pellet Bow
 273:Gorgon Crossbow
 274:Colossus Crossbow
-275:Demon CrossBow
+275:Demon Crossbow
 276:Eagle Orb
 277:Sacred Globe
 278:Smoked Sphere

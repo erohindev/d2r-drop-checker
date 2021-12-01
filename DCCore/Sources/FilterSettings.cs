@@ -307,6 +307,12 @@ public class FilterSettings
                             filterEntry.Rarity.Add(D2ItemRarity.UNIQUE);
                             line = line.Replace("[U]", "");
                         }
+                        
+                        if (line.Contains("[LQ]"))
+                        {
+                            filterEntry.Rarity.Add(D2ItemRarity.LOW_QUALITY);
+                            line = line.Replace("[LQ]", "");
+                        }
 
                         if (line.Contains("[HQ]"))
                         {

@@ -1,21 +1,24 @@
-#- comment symbol. Write comments only on separate lines
+# Don't delete CONFIG: and FILTERS: lines
+# Press E while DC.exe terminal window focused to open this file in notepad
+# Press R while DC.exe terminal window focused to update filters
+# - comment symbol. Write comments only on new lines
 
 CONFIG:
-# depends on mode. Don't use negative offsets
+# depends on mode. Don't use negative values
 TextX = 8
 TextY = 20
 
-# note text alignment to right is not implemented, make bigger offset from right screen border (e.g. TextX = 400) to see text
+# Text alignment to right is not implemented, make bigger offset from right screen border (e.g. TextX = 400) to see text
 # Mode 0 - (TextX = 0 TextY = 0) is top left screen corner, print items from top to bottom
 # Mode 1 - (TextX = 0 TextY = 0) is top right screen corner, print items from top to bottom
-# Mode 2 - (TextX = 0 TextY = 0) is bottom right screen corner, print items displayed from bottom to top
-# Mode 3 - (TextX = 0 TextY = 0) is bottom left screen corner, print items displayed from bottom to top
+# Mode 2 - (TextX = 0 TextY = 0) is bottom right screen corner, print items from bottom to top
+# Mode 3 - (TextX = 0 TextY = 0) is bottom left screen corner, print items from bottom to top
 AlignMode = 3
 
 # font size
 TextFontSize = 20
 
-# step between text lines in pixels
+# step between text lines in pixels (TextFontSize + n is ok)
 TextLineStep = 22
 
 # check items every n milliseconds (20-2000)
@@ -24,10 +27,10 @@ CheckDelayMs = 250
 # blink new dropped item labels, 0 - turn off blinks
 NewItemsBlink = 1
 
-# lower is faster
+# lower is faster (depends on refresh rate)
 BlinkSpeed = 5
 
-# in frames
+# 50 is ~1.5 seconds on 60Hz monitor (depends on refresh rate)
 BlinkDuration = 50
 
 FILTERS:
@@ -38,8 +41,16 @@ FILTERS:
 # all uniques
 [U]
 
-# all set items
+# all set items. Exact one line filter is "[U][S]" (see "filter whitelist logic" section)
 [S]
+
+# '!' char on start of line means "ignore item"
+# "!-filters" have high priority. "[M] Item" will not be displayed even if filters.txt have "![M]" or "![M] Item" line
+# exclude set rings from "[S]" filter
+![S] Ring
+
+# No low quality items
+![LQ]
 
 # rare jewelry
 [R] Amulet
@@ -65,12 +76,21 @@ Full Rejuv
 Key Of
 
 # filter whitelist logic:
-# [x][y] - item with x OR y-rarity. Possible values [M]-magic, [R]-rare, [S]-set, [U]-unique, [HQ]-superior, [ETH]-etheral
+# [x][y] - item with x OR y-rarity. Possible values [N]-Normal [M]-magic, [R]-rare, [S]-set, [U]-unique, [HQ]-superior, [LQ]-low quality
+# [ETH] - check if item is etheral. [ETH][R] - Etheral AND Rare
 # {2} - any item with 2 sockets
-# {0} - any item without sockets (use with caution and only for normal items)
+# {0} - any item without sockets (use with caution)
 # {4-6} - any item with 4, 5 or 6 sockets
-# [x]{4-6} - any item with 4, 5 or 6 sockets AND x-rarity
+# [ETH]{4-6} - any etheral item with 4, 5 or 6 sockets
+# [M]{4} - magic item with 4 sockets
 # [x] Name - item with x-rarity AND if item name contains 'Name' text (case-sensetive)
 # {3} Name - item with 3 sockets AND if item name contains 'Name' text
 # Name - check only if item name contains 'Name' text, any number of sockets, any rarity. Filter 'Rune' will display all runes, Rune Swords, Rune Bows...
-# items names list: http://www.gmstemple.com/Diablo2/itemcodes.html (please check for typos before copy-past)
+
+# Shorter rules have higher priority. If you set "[U]" filter you don't need to set "[U] Shako" filter to see Shako, it will be displayed anyway
+# "!-filters" are highest priority filters. "![U]" filter will hide all uniques even if config have "[U]" filter
+
+# {0-6}
+# !{1-5} - display any items with 0 or 6 sockets only
+
+# possible item names list: check ID_NAME.txt file

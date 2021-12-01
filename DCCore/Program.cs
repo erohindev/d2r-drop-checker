@@ -9,7 +9,7 @@ namespace DropChecker
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("D2R DropChecker v0.2");
+            Console.WriteLine("D2R DropChecker v0.2.1");
             
             using var itemChecker = new ItemChecker();
             
@@ -21,7 +21,7 @@ namespace DropChecker
 
             do
             {
-                key = Console.ReadKey(false);
+                key = Console.ReadKey(true);
                 
                 OnKeyPressed?.Invoke(key);
                 

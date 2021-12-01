@@ -70,12 +70,12 @@ public class ItemChecker : IDisposable
         {
             if (key.Key == ConsoleKey.R)
             {
-                Console.WriteLine("eload filters command");
+                Console.WriteLine("'Reload filters' command");
                 reloadFilters = true;
             }
             else if (key.Key == ConsoleKey.E)
             {
-                Console.WriteLine("dit filters command");
+                Console.WriteLine("'Edit filters' command");
                 Process.Start("notepad.exe", FilterSettings.FiltersFileRelativePath);
             }
         };
@@ -101,8 +101,8 @@ public class ItemChecker : IDisposable
         await GameManager.WaitForGame();
         
         SetStatusText(D2ItemRarity.SET, FoundD2R); Console.WriteLine(FoundD2R);
-        Console.WriteLine("Click on terminal and press E to edit filters.txt");
-        Console.WriteLine("Click on terminal and press R to reload filters.txt");
+        Console.WriteLine("Click on terminal and press [E] to edit filters.txt");
+        Console.WriteLine("Click on terminal and press [R] to reload filters.txt");
         
         Console.WriteLine("Running...");
 
@@ -311,11 +311,6 @@ public class ItemChecker : IDisposable
             X = x;
             Y = y;
         }
-
-        public override string ToString()
-        {
-            return "[x:" + X + ", y:" + Y + "]";
-        }
     }
 
     ScreenPoint GetScreenPointByMode(FilterSettings.AlignMode alignMode, int offsetX = 0, int offsetY = 0)
@@ -386,6 +381,9 @@ public class ItemChecker : IDisposable
             
             if(itemUnitData.Rarity == D2ItemRarity.HIGH_QUALITY)
                 nameToDisplay = "Superior " + nameToDisplay;
+            
+            if(itemUnitData.Rarity == D2ItemRarity.LOW_QUALITY)
+                nameToDisplay = "Low Quality " + nameToDisplay;
 
             if (itemUnitData.Socketed && item.TryGetStat(D2Stat.STAT_ITEM_NUMSOCKETS, out int sockets))
                 nameToDisplay = $"[{sockets}] " + nameToDisplay;
