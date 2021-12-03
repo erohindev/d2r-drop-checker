@@ -415,12 +415,6 @@ namespace D2Tools.Structs
         WEAPON = 3,
         OTHER = 4
     }
-    
-    public enum D2ItemIdentified : byte
-    {
-        NON_IDENTIFIED = 0,
-        IDENTIFIED = 1,
-    }
 
     public enum D2ItemRarity : byte
     {
@@ -475,23 +469,13 @@ namespace D2Tools.Structs
         [FieldOffset(0x18)] private byte _itemIdentified;
         [FieldOffset(0x19)] private byte _itemFlags1; // socketed
         [FieldOffset(0x1A)] private byte _itemFlags2; // etheral
-        [FieldOffset(0x50)] public D2ItemEquipLocation EquipLocation;
-        [FieldOffset(0x51)] public D2ItemLocationPanel StoreLocation;
+        [FieldOffset(0x54)] public D2ItemEquipLocation EquipLocation;
+        [FieldOffset(0x55)] public D2ItemLocationPanel StoreLocation;
 
-        public D2ItemIdentified Identified => (D2ItemIdentified)(_itemIdentified >> 4);
         public bool Etheral => (_itemFlags2 & (1 << 6)) != 0;
         public bool Socketed => (_itemFlags1 & (1 << 3)) != 0;
         public bool New => (_itemFlags1 & (1 << 5)) != 0;
-
-        public bool IsIdentified => Identified == D2ItemIdentified.IDENTIFIED;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    public struct D2ItemInventoryData // pInventory + n
-    {
-        [FieldOffset(0x4C)] private byte _socketsFilled;
-
-        public int SocketsFilled => _socketsFilled;
+        public bool Identified => (_itemIdentified >> 4) == 1;
     }
     
     public class BaseD2
@@ -1219,7 +1203,6 @@ namespace D2Tools.Structs
         public bool IsRune => Unit.TXTID > 609 && Unit.TXTID < 643;
 
         public D2ItemData ItemData;
-        public D2ItemInventoryData ItemInventoryData;
         public D2ItemUnitData ItemUnitData;
 
         public D2StatValueData[] Stats;
@@ -1259,7 +1242,7 @@ namespace D2Tools.Structs
             stringBuilder.AppendLine("Identified: " + ItemUnitData.Identified);
             stringBuilder.AppendLine("Etheral: " + ItemUnitData.Etheral);
             stringBuilder.AppendLine("Socketed: " + ItemUnitData.Socketed);
-            if (ItemUnitData.Socketed) stringBuilder.AppendLine("Sockets Filled: " + ItemInventoryData.SocketsFilled);
+            stringBuilder.AppendLine("New: " + ItemUnitData.New);
 
             stringBuilder.AppendLine("+ Stats:");
 

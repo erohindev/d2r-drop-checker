@@ -388,7 +388,7 @@ public class ItemChecker : IDisposable
             if (itemUnitData.Socketed && item.TryGetStat(D2Stat.STAT_ITEM_NUMSOCKETS, out int sockets))
                 nameToDisplay = $"[{sockets}] " + nameToDisplay;
 
-            if (!itemUnitData.New && !item.IsSimple && item.ItemUnitData.IsIdentified)
+            if (!itemUnitData.New && !item.IsSimple && item.ItemUnitData.Identified)
                 nameToDisplay = "(checked) " + nameToDisplay;
 
             var point = GetScreenPointByMode(_filterSettings.Mode, 0, (i + 1) * _filterSettings.TextLineStep * sign);
